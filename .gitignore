@@ -10,3 +10,7 @@ node_modules/
 # Local tooling
 /.playwright-mcp/
 .claude/settings.local.json
+
+# Allure
+/allure-results/
+/allure-report/
