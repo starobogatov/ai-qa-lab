@@ -9,6 +9,10 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      REPORT_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -26,12 +30,43 @@ jobs:
         name: playwright-report
         path: playwright-report/
         retention-days: 30
+    # Pull the trend history from the currently published report so it carries over
+    - name: Fetch Allure history
+      if: ${{ !cancelled() }}
+      run: |
+        mkdir -p allure-history
+        curl -fsSL "${REPORT_URL}history.jsonl" -o allure-history/history.jsonl \
+          || echo "No published history yet, starting fresh"
+        [ -s allure-history/history.jsonl ] || rm -f allure-history/history.jsonl
     - name: Generate Allure report
       if: ${{ !cancelled() }}
-      run: npx allure generate allure-results --clean -o allure-report
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+      run: |
+        npx allure generate allure-results --clean -o allure-report --history-limit 30
+        cp allure-history/history.jsonl allure-report/history.jsonl
+    - uses: actions/upload-pages-artifact@v5
+      if: ${{ !cancelled() && github.event_name != 'pull_request' }}
       with:
-        name: allure-report
         path: allure-report/
-        retention-days: 30
+
+  # Publishes the Allure report to GitHub Pages; the run page links to it
+  deploy-report:
+    needs: test
+    if: ${{ !cancelled() && needs.test.result != 'skipped' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5
+    - name: Link report in run summary
+      run: |
+        echo "## Allure report" >> "$GITHUB_STEP_SUMMARY"
+        echo "[Open the Allure report](${{ steps.deployment.outputs.page_url }}) (tests: ${{ needs.test.result }})" >> "$GITHUB_STEP_SUMMARY"
