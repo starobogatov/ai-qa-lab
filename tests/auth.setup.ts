@@ -1,6 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import { AUTH_USERS, PASSWORD, authFile } from './support/auth';
 import { LoginPage } from './pages/LoginPage';
+import { InventoryPage } from './pages/InventoryPage';
 
 const SESSION_TTL_SECONDS = 2 * 60 * 60;
 
@@ -12,7 +13,7 @@ for (const user of AUTH_USERS) {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
     await loginPage.login(user, PASSWORD);
-    await expect(page).toHaveURL(/\/inventory\.html$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(InventoryPage.url, { timeout: 30_000 });
 
     // SauceDemo's session cookie expires 10 minutes after login, which a slow CI
     // run can outlast. Re-save the cookies with a 2-hour expiry.

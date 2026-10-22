@@ -2,10 +2,11 @@
 // seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
-import { LoginPage } from './pages/LoginPage';
+import { LOGIN_ERRORS, LoginPage } from './pages/LoginPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { CartPage } from './pages/CartPage';
 import { LOGGED_OUT, PASSWORD } from './support/auth';
+import { PRODUCTS } from './support/data';
 
 // The only spec that logs in through the UI; every test starts logged out.
 test.use({ storageState: LOGGED_OUT });
@@ -21,128 +22,113 @@ test.describe('Login', () => {
   test('Valid login with standard_user', async ({ page }) => {
     const inventory = new InventoryPage(page);
 
-    // 1. Login form is visible
-    await expect(loginPage.username).toBeVisible();
-    await expect(loginPage.password).toBeVisible();
-    await expect(loginPage.loginButton).toBeVisible();
+    await test.step('Login form is visible', async () => {
+      await expect(loginPage.username).toBeVisible();
+      await expect(loginPage.password).toBeVisible();
+      await expect(loginPage.loginButton).toBeVisible();
+    });
 
-    // 2-3. Log in with valid credentials
-    await loginPage.login('standard_user', PASSWORD);
-    await expect(page).toHaveURL(/\/inventory\.html$/);
-    await expect(inventory.title).toHaveText('Products');
-    await expect(inventory.items).toHaveCount(6);
-    await expect(inventory.cartBadge).toBeHidden();
+    await test.step('Log in with valid credentials', async () => {
+      await loginPage.login('standard_user', PASSWORD);
+      await expect(page).toHaveURL(InventoryPage.url);
+      await expect(inventory.title).toHaveText('Products');
+      await expect(inventory.items).toHaveCount(6);
+      await expect(inventory.cartBadge).toBeHidden();
+    });
   });
 
   test('Login by pressing Enter in password field', async ({ page }) => {
-    // 1. Fill credentials and press Enter
     await loginPage.username.fill('standard_user');
     await loginPage.password.fill(PASSWORD);
     await loginPage.password.press('Enter');
-    await expect(page).toHaveURL(/\/inventory\.html$/);
+    await expect(page).toHaveURL(InventoryPage.url);
   });
 
   test('Both fields empty', async ({ page }) => {
-    // 1. Click Login without filling any field
     await loginPage.loginButton.click();
-    await expect(loginPage.error).toHaveText('Epic sadface: Username is required');
-    await expect(page).toHaveURL(/\/$/);
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.usernameRequired);
+    await expect(page).toHaveURL(LoginPage.url);
   });
 
   test('Empty username, valid password', async () => {
-    // 1. Fill only Password and click Login
     await loginPage.login('', PASSWORD);
-    await expect(loginPage.error).toHaveText('Epic sadface: Username is required');
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.usernameRequired);
   });
 
   test('Valid username, empty password', async () => {
-    // 1. Fill only Username and click Login
     await loginPage.login('standard_user', '');
-    await expect(loginPage.error).toHaveText('Epic sadface: Password is required');
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.passwordRequired);
   });
 
   test('Wrong password', async ({ page }) => {
-    // 1. Fill valid username with wrong password
     await loginPage.login('standard_user', 'wrong_pass');
-    await expect(loginPage.error).toHaveText(
-      'Epic sadface: Username and password do not match any user in this service',
-    );
-    await expect(page).toHaveURL(/\/$/);
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.noMatch);
+    await expect(page).toHaveURL(LoginPage.url);
   });
 
   test('Unknown username', async () => {
-    // 1. Fill unknown username with valid password
     await loginPage.login('no_such_user', PASSWORD);
-    await expect(loginPage.error).toHaveText(
-      'Epic sadface: Username and password do not match any user in this service',
-    );
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.noMatch);
   });
 
   test('Username is case-sensitive', async ({ page }) => {
-    // 1. Fill username with different casing
     await loginPage.login('Standard_User', PASSWORD);
-    await expect(loginPage.error).toHaveText(
-      'Epic sadface: Username and password do not match any user in this service',
-    );
-    await expect(page).toHaveURL(/\/$/);
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.noMatch);
+    await expect(page).toHaveURL(LoginPage.url);
   });
 
   test('Locked out user cannot log in', async ({ page }) => {
-    // 1. Log in as locked_out_user
     await loginPage.login('locked_out_user', PASSWORD);
-    await expect(loginPage.error).toHaveText('Epic sadface: Sorry, this user has been locked out.');
-    await expect(page).toHaveURL(/\/$/);
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.lockedOut);
+    await expect(page).toHaveURL(LoginPage.url);
   });
 
   test('Dismiss error message', async () => {
-    // 1. Trigger an error
-    await loginPage.loginButton.click();
-    await expect(loginPage.error).toBeVisible();
-    await expect(loginPage.errorCloseButton).toBeVisible();
+    await test.step('Trigger an error', async () => {
+      await loginPage.loginButton.click();
+      await expect(loginPage.error).toBeVisible();
+      await expect(loginPage.errorCloseButton).toBeVisible();
+    });
 
-    // 2. Close the error
-    await loginPage.errorCloseButton.click();
-    await expect(loginPage.error).toBeHidden();
+    await test.step('Close the error', async () => {
+      await loginPage.errorCloseButton.click();
+      await expect(loginPage.error).toBeHidden();
+    });
   });
 
   test('Inventory is protected without login', async ({ page }) => {
-    // 1. Open /inventory.html directly
     await page.goto('/inventory.html');
-    await expect(page).toHaveURL(/\/$/);
-    await expect(loginPage.error).toHaveText(
-      "Epic sadface: You can only access '/inventory.html' when you are logged in.",
-    );
+    await expect(page).toHaveURL(LoginPage.url);
+    await expect(loginPage.error).toHaveText(LOGIN_ERRORS.loginRequired('/inventory.html'));
   });
 
   for (const path of ['/cart.html', '/checkout-step-one.html', '/checkout-step-two.html', '/checkout-complete.html']) {
     test(`Checkout pages are protected without login: ${path}`, async ({ page }) => {
-      // 1. Open the page directly
       await page.goto(path);
-      await expect(page).toHaveURL(/\/$/);
-      await expect(loginPage.error).toHaveText(
-        `Epic sadface: You can only access '${path}' when you are logged in.`,
-      );
+      await expect(page).toHaveURL(LoginPage.url);
+      await expect(loginPage.error).toHaveText(LOGIN_ERRORS.loginRequired(path));
     });
   }
 
   test('Logout ends the session', async ({ page }) => {
     const inventory = new InventoryPage(page);
 
-    // 1. Log in as standard_user
-    await loginPage.login('standard_user', PASSWORD);
-    await expect(page).toHaveURL(/\/inventory\.html$/);
+    await test.step('Log in as standard_user', async () => {
+      await loginPage.login('standard_user', PASSWORD);
+      await expect(page).toHaveURL(InventoryPage.url);
+    });
 
-    // 2. Log out via the menu
-    await inventory.logout();
-    await expect(page).toHaveURL(/\/$/);
-    await expect(loginPage.loginButton).toBeVisible();
+    await test.step('Log out via the menu', async () => {
+      await inventory.logout();
+      await expect(page).toHaveURL(LoginPage.url);
+      await expect(loginPage.loginButton).toBeVisible();
+    });
 
-    // 3. Browser Back must not restore the session
-    await page.goBack();
-    await expect(page).toHaveURL(/\/$/);
-    await expect(loginPage.error).toHaveText(
-      "Epic sadface: You can only access '/inventory.html' when you are logged in.",
-    );
+    await test.step('Browser Back does not restore the session', async () => {
+      await page.goBack();
+      await expect(page).toHaveURL(LoginPage.url);
+      await expect(loginPage.error).toHaveText(LOGIN_ERRORS.loginRequired('/inventory.html'));
+    });
   });
 
   test('Cart is not carried over to a different user after logout', async ({ page }) => {
@@ -153,19 +139,22 @@ test.describe('Login', () => {
     const inventory = new InventoryPage(page);
     const cart = new CartPage(page);
 
-    // 1. standard_user adds an item
-    await loginPage.login('standard_user', PASSWORD);
-    await inventory.addToCart('Sauce Labs Backpack');
-    await expect(inventory.cartBadge).toHaveText('1');
+    await test.step('standard_user adds an item', async () => {
+      await loginPage.login('standard_user', PASSWORD);
+      await inventory.addToCart(PRODUCTS.backpack);
+      await expect(inventory.cartBadge).toHaveText('1');
+    });
 
-    // 2. Log out and log in as a different user
-    await inventory.logout();
-    await loginPage.login('visual_user', PASSWORD);
-    await expect(page).toHaveURL(/\/inventory\.html$/);
+    await test.step('Log out and log in as a different user', async () => {
+      await inventory.logout();
+      await loginPage.login('visual_user', PASSWORD);
+      await expect(page).toHaveURL(InventoryPage.url);
+    });
 
-    // 3. The second user's cart is empty
-    await expect(inventory.cartBadge).toBeHidden();
-    await inventory.openCart();
-    await expect(cart.items).toHaveCount(0);
+    await test.step("The second user's cart is empty", async () => {
+      await expect(inventory.cartBadge).toBeHidden();
+      await inventory.openCart();
+      await expect(cart.items).toHaveCount(0);
+    });
   });
 });

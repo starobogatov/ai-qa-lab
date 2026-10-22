@@ -1,7 +1,17 @@
 import { type Locator, type Page } from '@playwright/test';
 import { healable } from '../support/healing';
 
+export const LOGIN_ERRORS = {
+  usernameRequired: 'Epic sadface: Username is required',
+  passwordRequired: 'Epic sadface: Password is required',
+  noMatch: 'Epic sadface: Username and password do not match any user in this service',
+  lockedOut: 'Epic sadface: Sorry, this user has been locked out.',
+  loginRequired: (path: string) => `Epic sadface: You can only access '${path}' when you are logged in.`,
+};
+
 export class LoginPage {
+  static readonly url = /\/$/;
+
   readonly username: Locator;
   readonly password: Locator;
   readonly loginButton: Locator;

@@ -1,8 +1,21 @@
 import { type Locator, type Page } from '@playwright/test';
 import { healable } from '../support/healing';
+import { type CustomerInfo } from '../support/data';
+
+export const CHECKOUT_ERRORS = {
+  firstNameRequired: 'Error: First Name is required',
+  lastNameRequired: 'Error: Last Name is required',
+  postalCodeRequired: 'Error: Postal Code is required',
+};
 
 /** Covers all three checkout screens: Your Information, Overview and Complete. */
 export class CheckoutPage {
+  static readonly urls = {
+    information: /\/checkout-step-one\.html$/,
+    overview: /\/checkout-step-two\.html$/,
+    complete: /\/checkout-complete\.html$/,
+  };
+
   readonly title: Locator;
 
   // Step one: Your Information
@@ -58,7 +71,7 @@ export class CheckoutPage {
     await this.page.goto('/checkout-step-one.html');
   }
 
-  async fillInformation(firstName: string, lastName: string, postalCode: string) {
+  async fillInformation({ firstName, lastName, postalCode }: CustomerInfo) {
     await this.firstName.fill(firstName);
     await this.lastName.fill(lastName);
     await this.postalCode.fill(postalCode);

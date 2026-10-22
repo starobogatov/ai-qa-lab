@@ -2,6 +2,8 @@ import { type Locator, type Page } from '@playwright/test';
 import { healable } from '../support/healing';
 
 export class InventoryPage {
+  static readonly url = /\/inventory\.html$/;
+
   readonly title: Locator;
   readonly items: Locator;
   readonly cartLink: Locator;

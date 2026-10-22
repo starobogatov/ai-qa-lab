@@ -4,7 +4,8 @@
 import { test, expect } from '@playwright/test';
 import { InventoryPage } from './pages/InventoryPage';
 import { CartPage } from './pages/CartPage';
-import { CheckoutPage } from './pages/CheckoutPage';
+import { CHECKOUT_ERRORS, CheckoutPage } from './pages/CheckoutPage';
+import { CUSTOMER, PRODUCTS } from './support/data';
 
 test.describe('Checkout – form validation (negative)', () => {
   let checkout: CheckoutPage;
@@ -13,35 +14,38 @@ test.describe('Checkout – form validation (negative)', () => {
     const inventory = new InventoryPage(page);
     checkout = new CheckoutPage(page);
     await inventory.goto();
-    await inventory.addToCart('Sauce Labs Backpack');
+    await inventory.addToCart(PRODUCTS.backpack);
     await inventory.openCart();
     await new CartPage(page).checkout();
   });
 
   // Plan 5.1–5.4
-  const cases = [
-    { name: 'all fields are empty', first: '', last: '', zip: '', error: 'Error: First Name is required' },
-    { name: 'last name is missing', first: 'John', last: '', zip: '12345', error: 'Error: Last Name is required' },
-    { name: 'postal code is missing', first: 'John', last: 'Doe', zip: '', error: 'Error: Postal Code is required' },
-    { name: 'first name is missing', first: '', last: 'Doe', zip: '12345', error: 'Error: First Name is required' },
+  const invalidForms = [
+    { when: 'all fields are empty', info: { firstName: '', lastName: '', postalCode: '' }, error: CHECKOUT_ERRORS.firstNameRequired },
+    { when: 'last name is missing', info: { ...CUSTOMER, lastName: '' }, error: CHECKOUT_ERRORS.lastNameRequired },
+    { when: 'postal code is missing', info: { ...CUSTOMER, postalCode: '' }, error: CHECKOUT_ERRORS.postalCodeRequired },
+    { when: 'first name is missing', info: { ...CUSTOMER, firstName: '' }, error: CHECKOUT_ERRORS.firstNameRequired },
   ];
 
-  for (const c of cases) {
-    test(`shows "${c.error}" when ${c.name}`, async ({ page }) => {
-      // 1. Fill the form and continue
-      await checkout.fillInformation(c.first, c.last, c.zip);
+  for (const { when, info, error } of invalidForms) {
+    test(`shows "${error}" when ${when}`, async ({ page }) => {
+      await checkout.fillInformation(info);
       await checkout.continue();
-      await expect(checkout.error).toHaveText(c.error);
-      await expect(page).toHaveURL(/\/checkout-step-one\.html$/);
+      await expect(checkout.error).toHaveText(error);
+      await expect(page).toHaveURL(CheckoutPage.urls.information);
     });
   }
 
   test('Dismiss checkout error', async () => {
-    // 1. Trigger a validation error, then close it
-    await checkout.continue();
-    await expect(checkout.error).toBeVisible();
-    await checkout.errorCloseButton.click();
-    await expect(checkout.error).toBeHidden();
+    await test.step('Trigger a validation error', async () => {
+      await checkout.continue();
+      await expect(checkout.error).toBeVisible();
+    });
+
+    await test.step('Close the error', async () => {
+      await checkout.errorCloseButton.click();
+      await expect(checkout.error).toBeHidden();
+    });
   });
 
   test('Whitespace-only postal code is rejected', async ({ page }) => {
@@ -49,10 +53,9 @@ test.describe('Checkout – form validation (negative)', () => {
     // and the user reaches the Overview.
     test.fail();
 
-    // 1. Fill a whitespace-only postal code and continue
-    await checkout.fillInformation('John', 'Doe', '   ');
+    await checkout.fillInformation({ ...CUSTOMER, postalCode: '   ' });
     await checkout.continue();
-    await expect(checkout.error).toHaveText('Error: Postal Code is required');
-    await expect(page).toHaveURL(/\/checkout-step-one\.html$/);
+    await expect(checkout.error).toHaveText(CHECKOUT_ERRORS.postalCodeRequired);
+    await expect(page).toHaveURL(CheckoutPage.urls.information);
   });
 });
