@@ -1,4 +1,5 @@
 import { type Locator, type Page } from '@playwright/test';
+import { healable } from '../support/healing';
 
 export class CartPage {
   readonly title: Locator;
@@ -7,10 +8,10 @@ export class CartPage {
   readonly checkoutButton: Locator;
 
   constructor(readonly page: Page) {
-    this.title = page.getByTestId('title');
+    this.title = healable(page.getByTestId('title'), 'CartPage.title');
     this.items = page.getByTestId('inventory-item');
-    this.continueShoppingButton = page.getByTestId('continue-shopping');
-    this.checkoutButton = page.getByTestId('checkout');
+    this.continueShoppingButton = healable(page.getByTestId('continue-shopping'), 'CartPage.continueShoppingButton');
+    this.checkoutButton = healable(page.getByTestId('checkout'), 'CartPage.checkoutButton');
   }
 
   async goto() {

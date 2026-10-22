@@ -1,4 +1,5 @@
 import { type Locator, type Page } from '@playwright/test';
+import { healable } from '../support/healing';
 
 export class LoginPage {
   readonly username: Locator;
@@ -8,11 +9,11 @@ export class LoginPage {
   readonly errorCloseButton: Locator;
 
   constructor(readonly page: Page) {
-    this.username = page.getByPlaceholder('Username');
-    this.password = page.getByPlaceholder('Password');
-    this.loginButton = page.getByRole('button', { name: 'Login' });
-    this.error = page.getByTestId('error');
-    this.errorCloseButton = page.getByTestId('error-button');
+    this.username = healable(page.getByPlaceholder('Username'), 'LoginPage.username');
+    this.password = healable(page.getByPlaceholder('Password'), 'LoginPage.password');
+    this.loginButton = healable(page.getByRole('button', { name: 'Login' }), 'LoginPage.loginButton');
+    this.error = healable(page.getByTestId('error'), 'LoginPage.error');
+    this.errorCloseButton = healable(page.getByTestId('error-button'), 'LoginPage.errorCloseButton');
   }
 
   async goto() {

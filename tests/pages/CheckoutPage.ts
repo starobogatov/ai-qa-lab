@@ -1,4 +1,5 @@
 import { type Locator, type Page } from '@playwright/test';
+import { healable } from '../support/healing';
 
 /** Covers all three checkout screens: Your Information, Overview and Complete. */
 export class CheckoutPage {
@@ -29,28 +30,28 @@ export class CheckoutPage {
   readonly backHomeButton: Locator;
 
   constructor(readonly page: Page) {
-    this.title = page.getByTestId('title');
+    this.title = healable(page.getByTestId('title'), 'CheckoutPage.title');
 
-    this.firstName = page.getByPlaceholder('First Name');
-    this.lastName = page.getByPlaceholder('Last Name');
-    this.postalCode = page.getByPlaceholder('Zip/Postal Code');
-    this.continueButton = page.getByTestId('continue');
-    this.cancelButton = page.getByTestId('cancel');
-    this.error = page.getByTestId('error');
-    this.errorCloseButton = page.getByTestId('error-button');
+    this.firstName = healable(page.getByPlaceholder('First Name'), 'CheckoutPage.firstName');
+    this.lastName = healable(page.getByPlaceholder('Last Name'), 'CheckoutPage.lastName');
+    this.postalCode = healable(page.getByPlaceholder('Zip/Postal Code'), 'CheckoutPage.postalCode');
+    this.continueButton = healable(page.getByTestId('continue'), 'CheckoutPage.continueButton');
+    this.cancelButton = healable(page.getByTestId('cancel'), 'CheckoutPage.cancelButton');
+    this.error = healable(page.getByTestId('error'), 'CheckoutPage.error');
+    this.errorCloseButton = healable(page.getByTestId('error-button'), 'CheckoutPage.errorCloseButton');
 
     this.items = page.getByTestId('inventory-item');
     this.itemPrices = page.getByTestId('inventory-item-price');
-    this.paymentInfo = page.getByTestId('payment-info-value');
-    this.shippingInfo = page.getByTestId('shipping-info-value');
-    this.subtotal = page.getByTestId('subtotal-label');
-    this.tax = page.getByTestId('tax-label');
-    this.total = page.getByTestId('total-label');
-    this.finishButton = page.getByTestId('finish');
+    this.paymentInfo = healable(page.getByTestId('payment-info-value'), 'CheckoutPage.paymentInfo');
+    this.shippingInfo = healable(page.getByTestId('shipping-info-value'), 'CheckoutPage.shippingInfo');
+    this.subtotal = healable(page.getByTestId('subtotal-label'), 'CheckoutPage.subtotal');
+    this.tax = healable(page.getByTestId('tax-label'), 'CheckoutPage.tax');
+    this.total = healable(page.getByTestId('total-label'), 'CheckoutPage.total');
+    this.finishButton = healable(page.getByTestId('finish'), 'CheckoutPage.finishButton');
 
-    this.completeHeader = page.getByTestId('complete-header');
-    this.completeText = page.getByTestId('complete-text');
-    this.backHomeButton = page.getByTestId('back-to-products');
+    this.completeHeader = healable(page.getByTestId('complete-header'), 'CheckoutPage.completeHeader');
+    this.completeText = healable(page.getByTestId('complete-text'), 'CheckoutPage.completeText');
+    this.backHomeButton = healable(page.getByTestId('back-to-products'), 'CheckoutPage.backHomeButton');
   }
 
   async gotoInformation() {

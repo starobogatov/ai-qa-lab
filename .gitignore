@@ -15,3 +15,6 @@ node_modules/
 /allure-results/
 /allure-report/
 /allure-history/
+
+# Self-healing fingerprints (HEAL_MODE=warn|strict)
+/healing/
