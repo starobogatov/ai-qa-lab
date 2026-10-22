@@ -1,6 +1,9 @@
 import { type Locator, type Page } from '@playwright/test';
+import { healable } from '../support/healing';
 
 export class InventoryPage {
+  static readonly url = /\/inventory\.html$/;
+
   readonly title: Locator;
   readonly items: Locator;
   readonly cartLink: Locator;
@@ -10,13 +13,13 @@ export class InventoryPage {
   readonly resetAppStateLink: Locator;
 
   constructor(readonly page: Page) {
-    this.title = page.getByTestId('title');
+    this.title = healable(page.getByTestId('title'), 'InventoryPage.title');
     this.items = page.getByTestId('inventory-item');
-    this.cartLink = page.getByTestId('shopping-cart-link');
-    this.cartBadge = page.getByTestId('shopping-cart-badge');
-    this.menuButton = page.getByRole('button', { name: 'Open Menu' });
-    this.logoutLink = page.getByTestId('logout-sidebar-link');
-    this.resetAppStateLink = page.getByTestId('reset-sidebar-link');
+    this.cartLink = healable(page.getByTestId('shopping-cart-link'), 'InventoryPage.cartLink');
+    this.cartBadge = healable(page.getByTestId('shopping-cart-badge'), 'InventoryPage.cartBadge');
+    this.menuButton = healable(page.getByRole('button', { name: 'Open Menu' }), 'InventoryPage.menuButton');
+    this.logoutLink = healable(page.getByTestId('logout-sidebar-link'), 'InventoryPage.logoutLink');
+    this.resetAppStateLink = healable(page.getByTestId('reset-sidebar-link'), 'InventoryPage.resetAppStateLink');
   }
 
   async goto() {

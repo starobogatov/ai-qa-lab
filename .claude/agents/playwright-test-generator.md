@@ -22,8 +22,11 @@ application behavior.
   - File name must be fs-friendly scenario name
   - Test must be placed in a describe matching the top-level test plan item
   - Test title must match the scenario name
-  - Includes a comment with the step text before each step execution. Do not duplicate comments if step requires
-    multiple actions.
+  - Wrap each plan step in `await test.step('<step text>', async () => { ... })` so it shows in the reports.
+    If the scenario has only one step, skip the wrapper; the test title already says it.
+  - Do not write comments that narrate the code (`// 1. Click login`). Only comment on why: a workaround,
+    an app quirk, or a known bug (`// BUG: ...` above `test.fail()`). Follow the rules in CLAUDE.md.
+  - Reuse the page objects in `tests/pages/` instead of raw selectors.
   - Always use best practices from the log when generating tests.
 
    <example-generation>
@@ -49,8 +52,9 @@ application behavior.
 
    test.describe('Adding New Todos', () => {
      test('Add Valid Todo', async ({ page }) => {
-       // 1. Click in the "What needs to be done?" input field
-       await page.click(...);
+       await test.step('Click in the "What needs to be done?" input field', async () => {
+         await todoPage.newTodoInput.click();
+       });
 
        ...
      });

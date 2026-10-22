@@ -1,16 +1,19 @@
 import { type Locator, type Page } from '@playwright/test';
+import { healable } from '../support/healing';
 
 export class CartPage {
+  static readonly url = /\/cart\.html$/;
+
   readonly title: Locator;
   readonly items: Locator;
   readonly continueShoppingButton: Locator;
   readonly checkoutButton: Locator;
 
   constructor(readonly page: Page) {
-    this.title = page.getByTestId('title');
+    this.title = healable(page.getByTestId('title'), 'CartPage.title');
     this.items = page.getByTestId('inventory-item');
-    this.continueShoppingButton = page.getByTestId('continue-shopping');
-    this.checkoutButton = page.getByTestId('checkout');
+    this.continueShoppingButton = healable(page.getByTestId('continue-shopping'), 'CartPage.continueShoppingButton');
+    this.checkoutButton = healable(page.getByTestId('checkout'), 'CartPage.checkoutButton');
   }
 
   async goto() {

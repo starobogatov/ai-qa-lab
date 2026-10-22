@@ -6,11 +6,12 @@ import { InventoryPage } from './pages/InventoryPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { authFile } from './support/auth';
+import { CUSTOMER, PRODUCTS } from './support/data';
 
 async function startCheckout(page: Page) {
   const inventory = new InventoryPage(page);
   await inventory.goto();
-  await inventory.addToCart('Sauce Labs Backpack');
+  await inventory.addToCart(PRODUCTS.backpack);
   await inventory.openCart();
   await new CartPage(page).checkout();
   return new CheckoutPage(page);
@@ -24,16 +25,19 @@ test.describe('problem_user', () => {
     // Last Name stays empty), so Continue fails with "Last Name is required".
     test.fail();
 
-    // 1. Start checkout and fill the form
-    const checkout = await startCheckout(page);
-    await checkout.fillInformation('John', 'Doe', '12345');
-    await expect(checkout.firstName).toHaveValue('John');
-    await expect(checkout.lastName).toHaveValue('Doe');
-    await expect(checkout.postalCode).toHaveValue('12345');
+    const checkout = await test.step('Start checkout and fill the form', async () => {
+      const checkout = await startCheckout(page);
+      await checkout.fillInformation(CUSTOMER);
+      await expect(checkout.firstName).toHaveValue(CUSTOMER.firstName);
+      await expect(checkout.lastName).toHaveValue(CUSTOMER.lastName);
+      await expect(checkout.postalCode).toHaveValue(CUSTOMER.postalCode);
+      return checkout;
+    });
 
-    // 2. Continue to the Overview
-    await checkout.continue();
-    await expect(page).toHaveURL(/\/checkout-step-two\.html$/);
+    await test.step('Continue to the Overview', async () => {
+      await checkout.continue();
+      await expect(page).toHaveURL(CheckoutPage.urls.overview);
+    });
   });
 });
 
@@ -45,15 +49,18 @@ test.describe('error_user', () => {
     // the Overview with an empty Last Name, and Finish does nothing.
     test.fail();
 
-    // 1. Start checkout and fill the form
-    const checkout = await startCheckout(page);
-    await checkout.fillInformation('John', 'Doe', '12345');
-    await expect(checkout.lastName).toHaveValue('Doe');
+    const checkout = await test.step('Start checkout and fill the form', async () => {
+      const checkout = await startCheckout(page);
+      await checkout.fillInformation(CUSTOMER);
+      await expect(checkout.lastName).toHaveValue(CUSTOMER.lastName);
+      return checkout;
+    });
 
-    // 2. Continue and finish
-    await checkout.continue();
-    await checkout.finish();
-    await expect(checkout.completeHeader).toHaveText('Thank you for your order!');
+    await test.step('Continue and finish', async () => {
+      await checkout.continue();
+      await checkout.finish();
+      await expect(checkout.completeHeader).toHaveText('Thank you for your order!');
+    });
   });
 });
 
@@ -63,9 +70,8 @@ test.describe('performance_glitch_user', () => {
   test('Checkout can be completed despite delays', async ({ page }) => {
     test.slow();
 
-    // 1. Start checkout, fill the form, finish
     const checkout = await startCheckout(page);
-    await checkout.fillInformation('John', 'Doe', '12345');
+    await checkout.fillInformation(CUSTOMER);
     await checkout.continue();
     await checkout.finish();
     await expect(checkout.completeHeader).toHaveText('Thank you for your order!');
