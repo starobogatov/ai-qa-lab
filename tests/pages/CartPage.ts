@@ -1,15 +1,18 @@
 import { type Locator, type Page } from '@playwright/test';
 import { healable } from '../support/healing';
+import { Header } from './Header';
 
 export class CartPage {
   static readonly url = /\/cart\.html$/;
 
+  readonly header: Header;
   readonly title: Locator;
   readonly items: Locator;
   readonly continueShoppingButton: Locator;
   readonly checkoutButton: Locator;
 
   constructor(readonly page: Page) {
+    this.header = new Header(page);
     this.title = healable(page.getByTestId('title'), 'CartPage.title');
     this.items = page.getByTestId('inventory-item');
     this.continueShoppingButton = healable(page.getByTestId('continue-shopping'), 'CartPage.continueShoppingButton');

@@ -1,5 +1,6 @@
 import { type Locator, type Page } from '@playwright/test';
 import { healable } from '../support/healing';
+import { Header } from './Header';
 import { type CustomerInfo } from '../support/data';
 
 export const CHECKOUT_ERRORS = {
@@ -16,6 +17,7 @@ export class CheckoutPage {
     complete: /\/checkout-complete\.html$/,
   };
 
+  readonly header: Header;
   readonly title: Locator;
 
   // Step one: Your Information
@@ -43,6 +45,7 @@ export class CheckoutPage {
   readonly backHomeButton: Locator;
 
   constructor(readonly page: Page) {
+    this.header = new Header(page);
     this.title = healable(page.getByTestId('title'), 'CheckoutPage.title');
 
     this.firstName = healable(page.getByPlaceholder('First Name'), 'CheckoutPage.firstName');
